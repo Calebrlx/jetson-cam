@@ -23,7 +23,7 @@ def process_frame(model, frame):
 # Main loop to handle RTSP stream and YOLO processing
 def main():
     # Replace with your RTSP stream URL
-    rtsp_url = "rtsp://<Your_IP_Address>:8554/stream"
+    rtsp_url = "rtsp://10.0.0.80:8554/stream"
 
     print(f"Connecting to RTSP stream: {rtsp_url}")
     cap = cv2.VideoCapture(rtsp_url)
