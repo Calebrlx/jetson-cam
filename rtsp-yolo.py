@@ -1,47 +1,44 @@
 import cv2
-import torch
-from transformers import pipeline
 from ultralytics import YOLO
 
-# Initialize YOLOv8 model from Hugging Face
+# Load the YOLOv8 model
 def load_model():
-    model = YOLO('yolov8n.pt')  # You can replace 'yolov8n.pt' with a larger model if Jetson Nano's GPU can handle it
+    print("Loading YOLOv8 model...")
+    model = YOLO("yolov8n.pt")  # Use "yolov8n.pt" for the smallest model (better for Jetson Nano)
     return model
 
-# Display processed frames
-def display_frame(window_name, frame):
-    cv2.imshow(window_name, frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):  # Quit on 'q'
-        return False
-    return True
-
-# Process frames with YOLOv8
+# Process a single frame with YOLOv8
 def process_frame(model, frame):
-    # Convert BGR to RGB for YOLO processing
+    # Convert the frame to RGB format (YOLO requires RGB)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = model.predict(rgb_frame)
-    
-    # Visualize the results
+
+    # Perform inference
+    results = model.predict(rgb_frame, imgsz=640)  # Adjust image size if necessary
+
+    # Draw results on the frame
     annotated_frame = results[0].plot()
+
     return annotated_frame
 
-# Main function to handle RTSP connection and YOLO inference
+# Main loop to handle RTSP stream and YOLO processing
 def main():
-    rtsp_url = "rtsp://<Your_IP_Address>:8554/stream"  # Replace with your RTSP URL
+    # Replace with your RTSP stream URL
+    rtsp_url = "rtsp://<Your_IP_Address>:8554/stream"
 
-    # Load YOLOv8 model
-    print("Loading YOLOv8 model...")
-    model = load_model()
-
-    # Open RTSP stream
     print(f"Connecting to RTSP stream: {rtsp_url}")
     cap = cv2.VideoCapture(rtsp_url)
     if not cap.isOpened():
         print("Error: Unable to open RTSP stream.")
         return
 
-    print("Processing video stream...")
+    # Load the YOLO model
+    model = load_model()
+
+    # Create a window for displaying the output
     window_name = "YOLOv8 Object Detection"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    print("Processing video stream. Press 'q' to exit.")
 
     while True:
         ret, frame = cap.read()
@@ -53,12 +50,16 @@ def main():
         processed_frame = process_frame(model, frame)
 
         # Display the processed frame
-        if not display_frame(window_name, processed_frame):
+        cv2.imshow(window_name, processed_frame)
+
+        # Exit if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     # Release resources
     cap.release()
     cv2.destroyAllWindows()
+    print("RTSP stream processing ended.")
 
 if __name__ == "__main__":
     main()
